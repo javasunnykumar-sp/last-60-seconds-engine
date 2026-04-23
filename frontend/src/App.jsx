@@ -57,6 +57,11 @@ function normalizeConfidence(confidence) {
   return Math.min(Math.max(numeric, 0), 1);
 }
 
+function formatUrgencyLabel(urgency) {
+  const normalized = normalizeUrgency(urgency);
+  return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+}
+
 const UploadZone = ({ onFileSelect, selectedFile }) => {
   const hasFile = Boolean(selectedFile);
 
@@ -256,9 +261,21 @@ export default function App() {
                   {urgencyConfig.bannerText}
                 </h2>
               </div>
+
               <p className={`text-lg leading-relaxed ${urgencyConfig.textClass}`}>
                 {result.recommended_action || 'No recommendation available.'}
               </p>
+
+              {result.urgency_reason && (
+                <div className="mt-4">
+                  <p className="text-xs font-bold uppercase tracking-wider text-white/80">
+                    Why this urgency level was assigned
+                  </p>
+                  <p className={`mt-1 text-sm leading-relaxed ${urgencyConfig.textClass}`}>
+                    {result.urgency_reason}
+                  </p>
+                </div>
+              )}
             </div>
 
             <div className="mb-2 flex items-center space-x-2 px-1">
@@ -289,7 +306,7 @@ export default function App() {
               />
               <ResultCard
                 label="Urgency"
-                value={urgency}
+                value={formatUrgencyLabel(urgency)}
                 icon={Zap}
                 colorClass="bg-purple-500"
               />
