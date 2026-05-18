@@ -64,33 +64,53 @@ function formatUrgencyLabel(urgency) {
 
 const UploadZone = ({ onFileSelect, selectedFile }) => {
   const hasFile = Boolean(selectedFile);
+  const [previewUrl, setPreviewUrl] = useState(null);
+
+  useEffect(() => {
+    if (!selectedFile) {
+      setPreviewUrl(null);
+      return undefined;
+    }
+
+    const objectUrl = URL.createObjectURL(selectedFile);
+    setPreviewUrl(objectUrl);
+
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [selectedFile]);
 
   return (
     <div className="w-full">
       <label
-        className={`relative flex h-64 w-full cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed transition-all duration-300 ${
+        className={`relative flex min-h-64 w-full cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed transition-all duration-300 ${
           hasFile
             ? 'border-blue-500 bg-blue-50'
             : 'border-gray-300 bg-white hover:border-blue-400 hover:bg-gray-50'
         }`}
       >
-        <div className="flex flex-col items-center justify-center px-6 text-center">
-          {hasFile ? (
-            <ImageIcon className="mb-3 h-12 w-12 text-blue-500" />
-          ) : (
+        {hasFile && previewUrl ? (
+          <div className="relative h-64 w-full">
+            <img
+              src={previewUrl}
+              alt="Selected hazard preview"
+              className="h-full w-full object-cover"
+            />
+            <div className="absolute inset-x-0 bottom-0 bg-black/65 px-4 py-3 text-white backdrop-blur-sm">
+              <div className="flex items-center gap-2">
+                <ImageIcon className="h-4 w-4" />
+                <p className="truncate text-sm font-medium">{selectedFile.name}</p>
+              </div>
+              <p className="mt-1 text-xs text-white/80">Click to replace image</p>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center px-6 text-center">
             <Upload className="mb-3 h-12 w-12 text-gray-400" />
-          )}
-
-          <p
-            className={`text-sm font-medium ${
-              hasFile ? 'text-blue-600' : 'text-gray-500'
-            }`}
-          >
-            {hasFile ? selectedFile.name : 'Click to upload or drag and drop'}
-          </p>
-
-          <p className="mt-2 text-xs text-gray-400">PNG, JPG, JPEG</p>
-        </div>
+            <p className="text-sm font-medium text-gray-500">
+              Click to upload or drag and drop
+            </p>
+            <p className="mt-2 text-xs text-gray-400">PNG, JPG, JPEG</p>
+          </div>
+        )}
 
         <input
           type="file"
