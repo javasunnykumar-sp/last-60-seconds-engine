@@ -62,46 +62,33 @@ function formatUrgencyLabel(urgency) {
   return normalized.charAt(0).toUpperCase() + normalized.slice(1);
 }
 
-const UploadZone = ({ onFileSelect, selectedFile }) => {
-  const hasFile = Boolean(selectedFile);
-  const [previewUrl, setPreviewUrl] = useState(null);
-
-  useEffect(() => {
-    if (!selectedFile) {
-      setPreviewUrl(null);
-      return undefined;
-    }
-
-    const objectUrl = URL.createObjectURL(selectedFile);
-    setPreviewUrl(objectUrl);
-
-    return () => URL.revokeObjectURL(objectUrl);
-  }, [selectedFile]);
+const UploadZone = ({ onFileSelect, selectedFile, previewUrl }) => {
+  const hasPreview = Boolean(selectedFile && previewUrl);
 
   return (
     <div className="w-full">
       <label
-        className={`relative flex min-h-64 w-full cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed transition-all duration-300 ${
-          hasFile
+        className={`relative flex h-64 w-full cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed transition-all duration-300 ${
+          hasPreview
             ? 'border-blue-500 bg-blue-50'
             : 'border-gray-300 bg-white hover:border-blue-400 hover:bg-gray-50'
         }`}
       >
-        {hasFile && previewUrl ? (
-          <div className="relative h-64 w-full">
+        {hasPreview ? (
+          <>
             <img
               src={previewUrl}
               alt="Selected hazard preview"
-              className="h-full w-full object-cover"
+              className="absolute inset-0 h-full w-full object-cover"
             />
-            <div className="absolute inset-x-0 bottom-0 bg-black/65 px-4 py-3 text-white backdrop-blur-sm">
+            <div className="absolute inset-x-0 bottom-0 bg-black/70 px-4 py-3 text-white backdrop-blur-sm">
               <div className="flex items-center gap-2">
                 <ImageIcon className="h-4 w-4" />
                 <p className="truncate text-sm font-medium">{selectedFile.name}</p>
               </div>
               <p className="mt-1 text-xs text-white/80">Click to replace image</p>
             </div>
-          </div>
+          </>
         ) : (
           <div className="flex flex-col items-center justify-center px-6 text-center">
             <Upload className="mb-3 h-12 w-12 text-gray-400" />
@@ -141,6 +128,7 @@ const ResultCard = ({ label, value, icon: Icon, colorClass }) => (
 
 export default function App() {
   const [file, setFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState('');
   const [textInput, setTextInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [loadingPhase, setLoadingPhase] = useState(0);
@@ -158,6 +146,27 @@ export default function App() {
 
     return () => clearInterval(interval);
   }, [loading]);
+
+  const handleFileSelect = (selected) => {
+    setFile(selected);
+    setResult(null);
+    setError(null);
+
+    if (!selected) {
+      setPreviewUrl('');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setPreviewUrl(typeof reader.result === 'string' ? reader.result : '');
+    };
+    reader.onerror = () => {
+      setPreviewUrl('');
+      setError('Could not preview the selected image. Please try another file.');
+    };
+    reader.readAsDataURL(selected);
+  };
 
   const handleAnalyze = async () => {
     if (!file) {
@@ -181,6 +190,7 @@ export default function App() {
 
   const reset = () => {
     setFile(null);
+    setPreviewUrl('');
     setTextInput('');
     setResult(null);
     setError(null);
@@ -211,7 +221,11 @@ export default function App() {
               {APP_CONFIG.EXPLAINER}
             </p>
 
-            <UploadZone selectedFile={file} onFileSelect={setFile} />
+            <UploadZone
+              selectedFile={file}
+              previewUrl={previewUrl}
+              onFileSelect={handleFileSelect}
+            />
 
             <div className="space-y-4">
               <input
